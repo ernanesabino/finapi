@@ -7,12 +7,24 @@ app.use(express.json());
 
 const customers = [];
 
-/**
- * cpf - string
- * name - string
- * id - uuid
- * statement - []
- */
+// Middleware de verificação de conta
+function verifyIfExistsAccountCPF(request, response, next) {
+
+    const { cpf } = request.headers;
+
+    // Busca no array os dados de acordo com o cpf informado
+    const customer = customers.find(customer => customer.cpf === cpf);
+
+    if(!customer) {
+        return response.status(400).json({error: "Customer not found!"});
+    }
+
+    request.customer = customer;
+
+    return next();
+
+}
+
 
 app.post("/account", (request, response) => {
 
@@ -36,16 +48,9 @@ app.post("/account", (request, response) => {
 
 });
 
-app.get("/statement", (request, response) => {
-
-    const { cpf } = request.headers;
-
-    // Busca no array os dados de acordo com o cpf informado
-    const customer = customers.find(customer => customer.cpf === cpf);
-
-    if(!customer) {
-        return response.status(400).json({error: "Customer not found!"});
-    }
+app.get("/statement", verifyIfExistsAccountCPF, (request, response) => {
+    
+    const { customer } = request;
 
     return response.json(customer.statement);
 
